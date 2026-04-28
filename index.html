@@ -27,7 +27,7 @@
       font-size: 1.2rem;
       text-align: center;
     }
-    .btn {
+    button {
       margin-top: 24px;
       padding: 14px 32px;
       font-size: 1.1rem;
@@ -38,37 +38,18 @@
       cursor: pointer;
       font-weight: 600;
     }
-    .btn:active { opacity: 0.8; }
+    button:active { opacity: 0.8; }
     .hidden { display: none; }
   </style>
 </head>
 <body>
   <div id="reader" class="hidden"></div>
   <div id="status"></div>
-  <button id="scanBtn" class="btn" onclick="startScan()">Scan QR Code</button>
+  <button id="scanBtn" onclick="startScan()">Scan QR Code</button>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
     let scanner = null;
-
-    // If we redirected last time, reset to clean state
-    if (sessionStorage.getItem('redirected')) {
-      sessionStorage.removeItem('redirected');
-    }
-
-    // Also handle bfcache restore
-    window.addEventListener('pageshow', (e) => {
-      if (e.persisted) {
-        sessionStorage.removeItem('redirected');
-        document.getElementById('reader').classList.add('hidden');
-        document.getElementById('scanBtn').classList.remove('hidden');
-        document.getElementById('status').textContent = '';
-        if (scanner) {
-          try { scanner.stop(); } catch(e) {}
-          scanner = null;
-        }
-      }
-    });
 
     function startScan() {
       document.getElementById('scanBtn').classList.add('hidden');
@@ -82,36 +63,53 @@
         onScanSuccess
       ).catch(() => {
         document.getElementById('status').textContent = 'Camera access denied';
-        setTimeout(() => document.getElementById('scanBtn').classList.remove('hidden'), 1500);
+        reset();
       });
     }
 
     function onScanSuccess(decodedText) {
       scanner.stop().then(() => {
-        scanner = null;
         document.getElementById('reader').classList.add('hidden');
 
         if (!decodedText.includes('hitsternordics.com')) {
           document.getElementById('status').textContent = 'Not a Hitster link. Try again.';
-          setTimeout(() => document.getElementById('scanBtn').classList.remove('hidden'), 1500);
+          reset();
           return;
         }
 
         let remaining = 3;
-        document.getElementById('status').textContent = `Found! Opening in ${remaining}...`;
+        document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
+        document.getElementById('scanBtn').classList.remove('hidden');
 
         const interval = setInterval(() => {
           remaining--;
           if (remaining <= 0) {
             clearInterval(interval);
-            sessionStorage.setItem('redirected', '1');
+            document.getElementById('status').textContent = '';
             window.location.href = decodedText;
           } else {
-            document.getElementById('status').textContent = `Found! Opening in ${remaining}...`;
+            document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
           }
         }, 1000);
       });
     }
+
+    function reset() {
+      setTimeout(() => {
+        document.getElementById('scanBtn').classList.remove('hidden');
+      }, 1500);
+    }
+
+    // If user navigated back, show scan button
+    window.addEventListener('pageshow', () => {
+      if (scanner) {
+        try { scanner.stop(); } catch(e) {}
+        scanner = null;
+      }
+      document.getElementById('reader').classList.add('hidden');
+      document.getElementById('scanBtn').classList.remove('hidden');
+      document.getElementById('status').textContent = '';
+    });
   </script>
 </body>
 </html>
