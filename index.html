@@ -27,7 +27,7 @@
       font-size: 1.2rem;
       text-align: center;
     }
-    button {
+    .btn {
       margin-top: 24px;
       padding: 14px 32px;
       font-size: 1.1rem;
@@ -37,23 +37,26 @@
       border-radius: 99px;
       cursor: pointer;
       font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
     }
-    button:active { opacity: 0.8; }
+    .btn:active { opacity: 0.8; }
     .hidden { display: none; }
   </style>
 </head>
 <body>
   <div id="reader" class="hidden"></div>
   <div id="status"></div>
-  <button id="scanBtn" onclick="startScan()">Scan QR Code</button>
+  <button id="scanBtn" class="btn" onclick="startScan()">Scan QR Code</button>
+  <a id="playBtn" class="btn hidden" target="_blank" rel="noopener">Play</a>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
     let scanner = null;
-    let countdownInterval = null;
 
     function startScan() {
       document.getElementById('scanBtn').classList.add('hidden');
+      document.getElementById('playBtn').classList.add('hidden');
       document.getElementById('reader').classList.remove('hidden');
       document.getElementById('status').textContent = '';
 
@@ -64,59 +67,48 @@
         onScanSuccess
       ).catch(() => {
         document.getElementById('status').textContent = 'Camera access denied';
-        reset();
+        showScanButton();
       });
     }
 
     function onScanSuccess(decodedText) {
       scanner.stop().then(() => {
+        scanner = null;
         document.getElementById('reader').classList.add('hidden');
 
         if (!decodedText.includes('hitsternordics.com')) {
           document.getElementById('status').textContent = 'Not a Hitster link. Try again.';
-          reset();
+          setTimeout(showScanButton, 1500);
           return;
         }
 
         let remaining = 3;
-        document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
+        document.getElementById('status').textContent = `Found! Opening in ${remaining}...`;
 
-        countdownInterval = setInterval(() => {
+        const interval = setInterval(() => {
           remaining--;
           if (remaining <= 0) {
-            clearInterval(countdownInterval);
-            countdownInterval = null;
-            window.location.href = decodedText;
+            clearInterval(interval);
+            document.getElementById('status').textContent = 'Ready!';
+            const playBtn = document.getElementById('playBtn');
+            playBtn.href = decodedText;
+            playBtn.classList.remove('hidden');
+            playBtn.addEventListener('click', function onPlay() {
+              playBtn.removeEventListener('click', onPlay);
+              playBtn.classList.add('hidden');
+              document.getElementById('status').textContent = '';
+              showScanButton();
+            });
           } else {
-            document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
+            document.getElementById('status').textContent = `Found! Opening in ${remaining}...`;
           }
         }, 1000);
       });
     }
 
-    function resetUI() {
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
-      }
-      if (scanner) {
-        try { scanner.stop(); } catch(e) {}
-        scanner = null;
-      }
-      document.getElementById('reader').classList.add('hidden');
+    function showScanButton() {
       document.getElementById('scanBtn').classList.remove('hidden');
-      document.getElementById('status').textContent = '';
     }
-
-    function reset() {
-      setTimeout(() => {
-        document.getElementById('scanBtn').classList.remove('hidden');
-      }, 1500);
-    }
-
-    window.addEventListener('pageshow', (e) => {
-      if (e.persisted) resetUI();
-    });
   </script>
 </body>
 </html>
