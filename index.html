@@ -50,6 +50,7 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
     let scanner = null;
+    let countdownInterval = null;
 
     function startScan() {
       document.getElementById('scanBtn').classList.add('hidden');
@@ -80,10 +81,11 @@
         let remaining = 3;
         document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
 
-        const interval = setInterval(() => {
+        countdownInterval = setInterval(() => {
           remaining--;
           if (remaining <= 0) {
-            clearInterval(interval);
+            clearInterval(countdownInterval);
+            countdownInterval = null;
             window.location.href = decodedText;
           } else {
             document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
@@ -92,14 +94,11 @@
       });
     }
 
-    function reset() {
-      setTimeout(() => {
-        document.getElementById('scanBtn').classList.remove('hidden');
-      }, 1500);
-    }
-
-    // If user navigated back, show scan button
-    window.addEventListener('pageshow', () => {
+    function resetUI() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
       if (scanner) {
         try { scanner.stop(); } catch(e) {}
         scanner = null;
@@ -107,6 +106,17 @@
       document.getElementById('reader').classList.add('hidden');
       document.getElementById('scanBtn').classList.remove('hidden');
       document.getElementById('status').textContent = '';
+    }
+
+    function reset() {
+      setTimeout(() => {
+        document.getElementById('scanBtn').classList.remove('hidden');
+      }, 1500);
+    }
+
+    window.addEventListener('pageshow', resetUI);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') resetUI();
     });
   </script>
 </body>
