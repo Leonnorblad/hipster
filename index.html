@@ -27,7 +27,7 @@
       font-size: 1.2rem;
       text-align: center;
     }
-    .btn {
+    button {
       margin-top: 24px;
       padding: 14px 32px;
       font-size: 1.1rem;
@@ -38,14 +38,14 @@
       cursor: pointer;
       font-weight: 600;
     }
-    .btn:active { opacity: 0.8; }
+    button:active { opacity: 0.8; }
     .hidden { display: none; }
   </style>
 </head>
 <body>
   <div id="reader" class="hidden"></div>
   <div id="status"></div>
-  <button id="scanBtn" class="btn" onclick="startScan()">Scan QR Code</button>
+  <button id="scanBtn" onclick="startScan()">Scan QR Code</button>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
@@ -78,54 +78,23 @@
           return;
         }
 
-        // Resolve the hitster URL to get the Spotify track ID
-        document.getElementById('status').textContent = 'Found! Resolving song...';
+        let remaining = 3;
+        document.getElementById('status').textContent = `Opening in ${remaining}...`;
 
-        resolveSpotifyUri(decodedText).then((spotifyUri) => {
-          let remaining = 3;
-          document.getElementById('status').textContent = `Opening in ${remaining}...`;
-
-          const interval = setInterval(() => {
-            remaining--;
-            if (remaining <= 0) {
-              clearInterval(interval);
-              document.getElementById('status').textContent = '';
-              document.getElementById('scanBtn').classList.remove('hidden');
-              // spotify: URI scheme opens the app directly, no tap needed
-              window.location.href = spotifyUri;
-            } else {
-              document.getElementById('status').textContent = `Opening in ${remaining}...`;
-            }
-          }, 1000);
-        }).catch(() => {
-          document.getElementById('status').textContent = 'Could not resolve song. Try again.';
-          setTimeout(() => document.getElementById('scanBtn').classList.remove('hidden'), 1500);
-        });
+        const interval = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(interval);
+            // Reset UI BEFORE redirecting
+            document.getElementById('status').textContent = '';
+            document.getElementById('scanBtn').classList.remove('hidden');
+            // Then go
+            window.location.href = decodedText;
+          } else {
+            document.getElementById('status').textContent = `Opening in ${remaining}...`;
+          }
+        }, 1000);
       });
-    }
-
-    async function resolveSpotifyUri(hitsterUrl) {
-      // Fetch the hitster URL via a CORS proxy to get the redirect Location
-      // The hitster URL 302-redirects to https://open.spotify.com/track/XXXX
-      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(hitsterUrl);
-      const resp = await fetch(proxyUrl, { redirect: 'manual' });
-
-      // corsproxy.io follows redirects, so we get the Spotify page
-      // Extract track ID from the final URL or response
-      const finalUrl = resp.url;
-      const match = finalUrl.match(/open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/);
-      if (match) {
-        return `spotify:${match[1]}:${match[2]}`;
-      }
-
-      // Fallback: parse the response body for Spotify URLs
-      const text = await resp.text();
-      const bodyMatch = text.match(/open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/);
-      if (bodyMatch) {
-        return `spotify:${bodyMatch[1]}:${bodyMatch[2]}`;
-      }
-
-      throw new Error('No Spotify track found');
     }
   </script>
 </body>
