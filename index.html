@@ -50,6 +50,7 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
     let scanner = null;
+    let countdownInterval = null;
 
     function startScan() {
       document.getElementById('scanBtn').classList.add('hidden');
@@ -79,13 +80,12 @@
 
         let remaining = 3;
         document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
-        document.getElementById('scanBtn').classList.remove('hidden');
 
-        const interval = setInterval(() => {
+        countdownInterval = setInterval(() => {
           remaining--;
           if (remaining <= 0) {
-            clearInterval(interval);
-            document.getElementById('status').textContent = '';
+            clearInterval(countdownInterval);
+            countdownInterval = null;
             window.location.href = decodedText;
           } else {
             document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
@@ -102,6 +102,10 @@
 
     // If user navigated back, show scan button
     window.addEventListener('pageshow', () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
       if (scanner) {
         try { scanner.stop(); } catch(e) {}
         scanner = null;
