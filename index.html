@@ -86,8 +86,7 @@
           if (remaining <= 0) {
             clearInterval(countdownInterval);
             countdownInterval = null;
-            window.open(decodedText, '_blank');
-            resetUI();
+            window.location.href = decodedText;
           } else {
             document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
           }
@@ -115,9 +114,8 @@
       }, 1500);
     }
 
-    window.addEventListener('pageshow', resetUI);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') resetUI();
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted) resetUI();
     });
   </script>
 </body>
