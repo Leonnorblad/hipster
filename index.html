@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hipster</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #111;
+      color: #fff;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #reader {
+      width: min(90vw, 400px);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #reader video { border-radius: 12px; }
+    #status {
+      margin-top: 24px;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+    button {
+      margin-top: 24px;
+      padding: 14px 32px;
+      font-size: 1.1rem;
+      background: #1DB954;
+      color: #fff;
+      border: none;
+      border-radius: 99px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:active { opacity: 0.8; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div id="reader" class="hidden"></div>
+  <div id="status"></div>
+  <button id="scanBtn" onclick="startScan()">Scan QR Code</button>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    let scanner = null;
+
+    function startScan() {
+      document.getElementById('scanBtn').classList.add('hidden');
+      document.getElementById('reader').classList.remove('hidden');
+      document.getElementById('status').textContent = '';
+
+      scanner = new Html5Qrcode('reader');
+      scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess
+      ).catch(() => {
+        document.getElementById('status').textContent = 'Camera access denied';
+        reset();
+      });
+    }
+
+    function onScanSuccess(decodedText) {
+      scanner.stop().then(() => {
+        document.getElementById('reader').classList.add('hidden');
+
+        if (!decodedText.includes('spotify.com') && !decodedText.includes('spotify:')) {
+          document.getElementById('status').textContent = 'Not a Spotify link. Try again.';
+          reset();
+          return;
+        }
+
+        let remaining = 3;
+        document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
+
+        const interval = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(interval);
+            // Use open.spotify.com with autoplay param
+            let url = decodedText;
+            if (url.includes('open.spotify.com')) {
+              url += (url.includes('?') ? '&' : '?') + 'go=1';
+            }
+            window.location.href = url;
+          } else {
+            document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
+          }
+        }, 1000);
+      });
+    }
+
+    function reset() {
+      setTimeout(() => {
+        document.getElementById('scanBtn').classList.remove('hidden');
+      }, 1500);
+    }
+
+    // If user navigated back, show scan button
+    window.addEventListener('pageshow', () => {
+      if (scanner) {
+        try { scanner.stop(); } catch(e) {}
+        scanner = null;
+      }
+      document.getElementById('reader').classList.add('hidden');
+      document.getElementById('scanBtn').classList.remove('hidden');
+      document.getElementById('status').textContent = '';
+    });
+  </script>
+</body>
+</html>
