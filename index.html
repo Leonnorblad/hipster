@@ -71,8 +71,8 @@
       scanner.stop().then(() => {
         document.getElementById('reader').classList.add('hidden');
 
-        if (!decodedText.includes('spotify.com') && !decodedText.includes('spotify:')) {
-          document.getElementById('status').textContent = 'Not a Spotify link. Try again.';
+        if (!decodedText.includes('hitsternordics.com')) {
+          document.getElementById('status').textContent = 'Not a Hitster link. Try again.';
           reset();
           return;
         }
@@ -84,12 +84,7 @@
           remaining--;
           if (remaining <= 0) {
             clearInterval(interval);
-            // Use open.spotify.com with autoplay param
-            let url = decodedText;
-            if (url.includes('open.spotify.com')) {
-              url += (url.includes('?') ? '&' : '?') + 'go=1';
-            }
-            window.location.href = url;
+            window.location.href = decodedText;
           } else {
             document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
           }
