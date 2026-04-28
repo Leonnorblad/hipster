@@ -89,16 +89,20 @@
           remaining--;
           if (remaining <= 0) {
             clearInterval(interval);
-            document.getElementById('status').textContent = 'Ready!';
             const playBtn = document.getElementById('playBtn');
             playBtn.href = decodedText;
+
+            // Try auto-open via programmatic click on the anchor
+            playBtn.click();
+
+            // Show play button as fallback + scan button
+            document.getElementById('status').textContent = '';
             playBtn.classList.remove('hidden');
-            playBtn.addEventListener('click', function onPlay() {
-              playBtn.removeEventListener('click', onPlay);
+            playBtn.onclick = () => {
               playBtn.classList.add('hidden');
               document.getElementById('status').textContent = '';
-              showScanButton();
-            });
+            };
+            showScanButton();
           } else {
             document.getElementById('status').textContent = `Found! Opening in ${remaining}...`;
           }
