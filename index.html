@@ -63,23 +63,22 @@
         onScanSuccess
       ).catch(() => {
         document.getElementById('status').textContent = 'Camera access denied';
-        setTimeout(() => document.getElementById('scanBtn').classList.remove('hidden'), 1500);
+        reset();
       });
     }
 
     function onScanSuccess(decodedText) {
       scanner.stop().then(() => {
-        scanner = null;
         document.getElementById('reader').classList.add('hidden');
 
         if (!decodedText.includes('hitsternordics.com')) {
           document.getElementById('status').textContent = 'Not a Hitster link. Try again.';
-          setTimeout(() => document.getElementById('scanBtn').classList.remove('hidden'), 1500);
+          reset();
           return;
         }
 
         let remaining = 3;
-        document.getElementById('status').textContent = `Opening in ${remaining}...`;
+        document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
 
         const interval = setInterval(() => {
           remaining--;
@@ -87,20 +86,30 @@
             clearInterval(interval);
             document.getElementById('status').textContent = '';
             document.getElementById('scanBtn').classList.remove('hidden');
-            // Open in hidden iframe — hitster redirects to Spotify,
-            // iOS intercepts the universal link and opens the app,
-            // our page stays in place
-            var iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = decodedText;
-            document.body.appendChild(iframe);
-            setTimeout(() => iframe.remove(), 5000);
+            window.location.href = decodedText;
           } else {
-            document.getElementById('status').textContent = `Opening in ${remaining}...`;
+            document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
           }
         }, 1000);
       });
     }
+
+    function reset() {
+      setTimeout(() => {
+        document.getElementById('scanBtn').classList.remove('hidden');
+      }, 1500);
+    }
+
+    // If user navigated back, show scan button
+    window.addEventListener('pageshow', () => {
+      if (scanner) {
+        try { scanner.stop(); } catch(e) {}
+        scanner = null;
+      }
+      document.getElementById('reader').classList.add('hidden');
+      document.getElementById('scanBtn').classList.remove('hidden');
+      document.getElementById('status').textContent = '';
+    });
   </script>
 </body>
 </html>
