@@ -86,7 +86,8 @@
           if (remaining <= 0) {
             clearInterval(countdownInterval);
             countdownInterval = null;
-            window.location.href = decodedText;
+            window.open(decodedText, '_blank');
+            resetUI();
           } else {
             document.getElementById('status').textContent = `Found! Redirecting in ${remaining}...`;
           }
